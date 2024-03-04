@@ -73,6 +73,15 @@ class lazer:
     def move (self, y, x):
         print("\033[%d;%dH" % (y, x))
 
+    def printStatus(self, fps):
+        print("Generating at "+fps+" fps")
+        print("latent: "+str(self.latent))
+        print("randomize: "+str(self.randomize),end='')
+        
+        print("\033[A\033[A\033[A")
+
+                    
+
     async def loop(self):
         #await loop()  # Enter main loop of program
         #asyncio.run(loop())  # Enter main loop of program
@@ -95,6 +104,8 @@ class lazer:
             mustRun = True
             lastRun = time.time()
             lastGen = lastRun
+            # to know when to flush the terminal after styegan init
+            firstRun = True
 
             while True:
                 # ms elapsed since last run
@@ -123,13 +134,18 @@ class lazer:
                 
                 if localMustRun:
                     startGen = time.time()
-                    self.move(1,1)
-                    print("Generating at "+str(1/(time.time()-lastGen))+" fps",end='\r')
+                    #self.move(1,1)
+                    if not firstRun:
+                        self.printStatus(str(1/(time.time()-lastGen)))
+
+                    #print("Generating at "+str(1/(time.time()-lastGen))+" fps",end='\r')
                     img = G(z, c)                           # NCHW, float32, dynamic range [-1, +1], no truncation
                     img = (img.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
 
-                    #endGen = time.time()
-                    #print('200 frames sent, at %1.2ffps' % (200.0 / (time.time() - start_send)))
+                    if firstRun:
+                        print(colorama.ansi.clear_screen())
+                        firstRun = False
+
                     #self.move(2,0)
                     #print('Generation took %1.2f ms' % (time.time() - startGen)* 1000,end='')
                     imgInColor = cv.cvtColor(img[0].cpu().numpy(), cv.COLOR_RGB2RGBA)
