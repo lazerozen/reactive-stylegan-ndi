@@ -19,22 +19,18 @@ import copy
 import numpy as np
 import torch
 from threading import Thread
-#import dnnlib
 from stylegan3.torch_utils import misc
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 from pythonosc.dispatcher import Dispatcher
 import asyncio
 import random
-
-#import fixpath
 import colorama
 from colorama import Fore, Back, Style, Cursor
 from random import randint, choice
 from string import printable
-
 from stylegan3.viz.renderer import Renderer
 from stylegan3 import dnnlib
-
+import time
 
 import NDIlib as ndi
 
@@ -45,8 +41,6 @@ class lazer:
     mustRun = True,
 
     renderArgs = dnnlib.EasyDict(
-        #pkl='C:\\Users\\wolfg\\.cache\\dnnlib\\downloads\\ee187625eea60ab45ed60218c4f6874b_https___api.ngc.nvidia.com_v2_models_nvidia_research_stylegan3_versions_1_files_stylegan3-t-ffhq-1024x1024.pkl',
-        #pkl = "C:\\Users\\wolfg\\.cache\\dnnlib\\downloads\\fc4ecbe86efeec3ce080e1ef7f7e0c20_https___api.ngc.nvidia.com_v2_models_nvidia_research_stylegan2_versions_1_files_stylegan2-afhqdog-512x512.pkl",
         pkl = 'C:\\git\\stylegan3\\models\\wikiart-1024-stylegan3-t-17.2Mimg.pkl',
         w0_seeds=[[213, 0.23870113378660512], [214, 0.7403464852610139], [313, 0.005108390022670563], [314, 0.01584399092971049]],
         trunc_psi=1.6,
@@ -62,14 +56,17 @@ class lazer:
         #input_transform,
         untransform = False
         ) 
+    
+    timeServerStart = time.perf_counter()
+    ndiFrequency = 0
+    ndiFramesSent = 0
+    imagesGenerated = 0
+    skippedLoop = 0
 
     def sendVideo (self,img,ndi_send,video_frame):
         video_frame.data = img
-        #video_frame.FourCC = ndi.FOURCC_VIDEO_TYPE_BGRX
-        video_frame.FourCC = ndi.FOURCC_VIDEO_TYPE_RGBX
-
-        ndi.send_send_video_v2(ndi_send, video_frame)
-
+        video_frame.FourCC = ndi.FOURCC_VIDEO_TYPE_RGBA
+        ndi.send_send_video_v2(ndi_send, video_frame) 
         return 0
 
     #TODO!
@@ -85,22 +82,33 @@ class lazer:
     def move (self, y, x):
         print("\033[%d;%dH" % (y, x))
 
-    def printStatus(self, fps):
-        print("Generating at "+fps+" fps")
-        print("latent: "+str(self.latent))
+    def printStatus(self):
+        print("Generating at "+str(1/(time.time()-self.lastRun))+" fps")
+        print("Images generated: "+str(self.imagesGenerated))
+        print("NDI frames sent: "+str(self.ndiFramesSent))
+        print("skipped loops: "+str(self.skippedLoop))
+        print("latentX: "+str(self.renderArgs['w0_seeds'][0][1]))
+        print("latentY: "+str(self.renderArgs['w0_seeds'][2][1]))
         print("randomize: "+str(self.randomize),end='')
         
-        print("\033[A\033[A\033[A")
+        print("\033[A\033[A\033[A\033[A\033[A\033[A\033[A")
+
+    def randomizeSeeds(self):
+        myLazer.renderArgs['w0_seeds'][0][0] = random.randint(0,1611312)
+        myLazer.renderArgs['w0_seeds'][1][0] = random.randint(0,1611312)
+        myLazer.renderArgs['w0_seeds'][2][0] = random.randint(0,1611312)
+        myLazer.renderArgs['w0_seeds'][3][0] = random.randint(0,1611312)
+        self.randomize = False
 
     async def loop(self):
-        #await loop()  # Enter main loop of program
-        #asyncio.run(loop())  # Enter main loop of program
         if not ndi.initialize():
             print("Could not initialize NDI.")
             return 0
 
         send_settings = ndi.SendCreate()        
         send_settings.ndi_name = 'stylegan3-lazer'
+        send_settings.clock_video = False
+        send_settings.clock_audio = False
 
         ndi_send = ndi.send_create(send_settings)
         
@@ -109,20 +117,16 @@ class lazer:
             return 0
         
         video_frame = ndi.VideoFrameV2()
-        video_frame.frame_rate_N = 30000
-        #video_frame.frame_format_type = ndi.NDIlib_frame_format_type_progressive; 
 
         renderer = Renderer()
-        previousLatent = self.latent
-        mustRun = True
-        lastRun = time.time()
-        lastGen = lastRun
+        
         # to know when to flush the terminal after styegan init
         firstRun = True
-
+        self.lastRun = time.time()
+            
         while True:
             # ms elapsed since last run
-            elapsed = (time.time() - lastRun)*1000
+            elapsed = (time.time() - self.lastRun)*1000
             
             # run frequency goal in ms
             runEvery = 1000 / self.fps
@@ -132,71 +136,70 @@ class lazer:
 
             # copy early for pseudo thread safety, consider lock
             localMustRun = self.mustRun
-            if self.latent != previousLatent:
-                localMustRun = True
             self.mustRun = False
 
-            #self.move(1,40)
-            #print('loop start',end='')
             if self.randomize:
-                #self.renderArgs['random_seed'] = random.randint(0,1611312)
-                myLazer.renderArgs['w0_seeds'][0][0] = random.randint(0,1611312)
-                myLazer.renderArgs['w0_seeds'][1][0] = random.randint(0,1611312)
-                myLazer.renderArgs['w0_seeds'][2][0] = random.randint(0,1611312)
-                myLazer.renderArgs['w0_seeds'][3][0] = random.randint(0,1611312)
-                self.randomize = False
+                self.randomizeSeeds()
                 localMustRun = True
 
-            c = None                                # class labels (not used in this example)
-            
-            if localMustRun:
-                startGen = time.time()
-                #self.move(1,1)
-                if not firstRun:
-                    self.printStatus(str(1/(time.time()-lastGen)))
+            if not firstRun:
+                try:
+                    #if faster than min resolution of timer
+                    self.printStatus()
+                except:
+                    x= 1
+                finally:
+                    x = 1
 
+            #if True:
+            if localMustRun:
+                self.lastRun = time.time()
                 res = renderer.render(**self.renderArgs)
-                
+                self.imagesGenerated+=1
+
                 if firstRun:
+                    #clear stylegan module output
                     print(colorama.ansi.clear_screen())
                     firstRun = False
 
-                #self.move(2,0)
-                #print('Generation took %1.2f ms' % (time.time() - startGen)* 1000,end='')
                 imgInColor = cv.cvtColor(res['image'], cv.COLOR_RGB2RGBA)
                 # TODO only after pkl load
                 imgWidth, imgHeight, imgChannel = imgInColor.shape
                 video_frame.xres = imgWidth
                 video_frame.yres = imgHeight
                 self.sendVideo(imgInColor,ndi_send, video_frame)
+                
+                self.ndiFramesSent += 1
+            else:
+                self.skippedLoop += 1
 
-                lastGen = time.time()
-
-            #self.move(1,40)
-            #print('loop done',end='')
             await asyncio.sleep(.001)
-
-            previousLatent = self.latent
-            lastRun = time.time()
 
     def filter_handler_latent_x(address, *args):
         # We expect one float argument
         if not len(args) == 1 or type(args[0]) is not float:
             return
+        
+        # do nothing if latens are the same
+        if myLazer.renderArgs['w0_seeds'][0][1] == args[0] and myLazer.renderArgs['w0_seeds'][1][1] == args[0] :
+            return
+        
         myLazer.renderArgs['w0_seeds'][0][1] = args[0]
         myLazer.renderArgs['w0_seeds'][1][1] = args[0]
         myLazer.mustRun = True
-        #print('latent set to '+str(myLazer.latent), end='\r')
     
     def filter_handler_latent_y(address, *args):
         # We expect one float argument
         if not len(args) == 1 or type(args[0]) is not float:
             return
+        
+        # do nothing if latens are the same
+        if myLazer.renderArgs['w0_seeds'][2][1] == args[0] and myLazer.renderArgs['w0_seeds'][3][1] == args[0] :
+            return
+        
         myLazer.renderArgs['w0_seeds'][2][1] = args[0]
         myLazer.renderArgs['w0_seeds'][3][1] = args[0]
         myLazer.mustRun = True
-        #print('latent set to '+str(myLazer.latent), end='\r')
-    
 
     def filter_handler_randomize(address, *args):
         print('randomize activated', end='\r')
