@@ -109,6 +109,8 @@ class lazer:
             return 0
         
         video_frame = ndi.VideoFrameV2()
+        video_frame.frame_rate_N = 30000
+        #video_frame.frame_format_type = ndi.NDIlib_frame_format_type_progressive; 
 
         renderer = Renderer()
         previousLatent = self.latent
@@ -162,6 +164,10 @@ class lazer:
                 #self.move(2,0)
                 #print('Generation took %1.2f ms' % (time.time() - startGen)* 1000,end='')
                 imgInColor = cv.cvtColor(res['image'], cv.COLOR_RGB2RGBA)
+                # TODO only after pkl load
+                imgWidth, imgHeight, imgChannel = imgInColor.shape
+                video_frame.xres = imgWidth
+                video_frame.yres = imgHeight
                 self.sendVideo(imgInColor,ndi_send, video_frame)
 
                 lastGen = time.time()
