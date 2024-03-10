@@ -4,10 +4,10 @@ osc port: 161
 
 osc channels
 
-| osc path | description |
-| ------------- | ------------- |
-| /latentX | pushes the latent in x direction | 
-| /latentY | pushes the latent in y direction |
-| /fps | sets desired render frequency |
-| /randomize | randomizes the seed |
-| /pkl | set pkl path to be loaded |
+| osc path | description | type |
+| ------------- | ------------- | ------------- |
+| /latentX | pushes the latent in x direction | float |
+| /latentY | pushes the latent in y direction | float |
+| /fps | sets desired render frequency | int |
+| /randomize | randomizes the seed | any |
+| /pkl | set pkl path to be loaded | string |
