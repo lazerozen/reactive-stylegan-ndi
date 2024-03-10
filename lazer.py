@@ -217,6 +217,7 @@ class lazer:
         
         if (not os.path.isfile(args[0])):
             print ("Could not load pkl file "+args[0]+" - file does not exist")
+            return
 
         print('loading pklfile '+args[0], end='\r')
         myLazer.renderArgs.pkl = args[0]
