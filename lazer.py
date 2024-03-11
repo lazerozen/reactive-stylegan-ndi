@@ -201,6 +201,32 @@ class lazer:
         myLazer.renderArgs['w0_seeds'][3][1] = args[0]
         myLazer.mustRun = True
 
+    #-1 - 2 default 1
+    def filter_handler_truncpsi(address, *args):
+        # We expect one float argument
+        if not len(args) == 1 or type(args[0]) is not float:
+            return
+        
+        # do nothing if latens are the same
+        if myLazer.renderArgs['trunc_psi'] == args[0]:
+            return
+        
+        myLazer.renderArgs['trunc_psi'] = args[0]
+        myLazer.mustRun = True
+
+    # 0- 16 default 16
+    def filter_handler_trunccutoff(address, *args):
+        # We expect one int argument
+        if not len(args) == 1 or type(args[0]) is not int:
+            return
+        
+        # do nothing if latens are the same
+        if myLazer.renderArgs['trunc_cutoff'] == args[0]:
+            return
+        
+        myLazer.renderArgs['trunc_cutoff'] = args[0]
+        myLazer.mustRun = True
+
     def filter_handler_randomize(address, *args):
         print('randomize activated', end='\r')
         myLazer.randomize = True
@@ -225,6 +251,8 @@ class lazer:
     dispatcher = Dispatcher()
     dispatcher.map("/latentX", filter_handler_latent_x)
     dispatcher.map("/latentY", filter_handler_latent_y)
+    dispatcher.map("/truncpsi", filter_handler_truncpsi)
+    dispatcher.map("/trunccutoff", filter_handler_trunccutoff)
     dispatcher.map("/randomize", filter_handler_randomize)
     dispatcher.map("/targetfps", filter_handler_targetfps)
     dispatcher.map("/setpkl", filter_handler_setpkl)
