@@ -93,7 +93,7 @@ class lazer(filterhandler):
 
     def sendVideo (self,img,ndi_send,video_frame):
         video_frame.data = img
-        video_frame.FourCC = ndi.FOURCC_VIDEO_TYPE_RGBA
+        video_frame.FourCC = ndi.FOURCC_VIDEO_TYPE_RGBX
         ndi.send_send_video_v2(ndi_send, video_frame) 
         return 0
 
@@ -206,6 +206,11 @@ class lazer(filterhandler):
                     firstRun = False
 
                 imgInColor = cv.cvtColor(res['image'], cv.COLOR_RGB2RGBA)
+                
+                #convert to 8bit if neccessary
+                #ratio = np.amax(imgInColor) / 256 
+                #imgInColor = (imgInColor / ratio).astype('uint8')
+
                 if (self.modelChanged):
                     imgWidth, imgHeight, imgChannel = imgInColor.shape
                     video_frame.xres = imgWidth
