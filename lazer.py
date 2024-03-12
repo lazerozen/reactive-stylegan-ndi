@@ -95,11 +95,29 @@ class lazer:
         print("\033[A\033[A\033[A\033[A\033[A\033[A\033[A")
 
     def randomizeSeeds(self):
+        myLazer.latent[0] = random.randint(0,1611312)
+        myLazer.latent[1] = random.randint(0,1611312)
+        self.randomize = False
+        return
+
         myLazer.renderArgs['w0_seeds'][0][0] = random.randint(0,1611312)
         myLazer.renderArgs['w0_seeds'][1][0] = random.randint(0,1611312)
         myLazer.renderArgs['w0_seeds'][2][0] = random.randint(0,1611312)
         myLazer.renderArgs['w0_seeds'][3][0] = random.randint(0,1611312)
-        self.randomize = False
+        
+
+    latent = [0,0] #x,y
+    step_y = 100
+
+    def setSeedsFromLatent(self):
+        self.renderArgs["w0_seeds"] = [] # [[seed, weight], ...]
+        for ofs_x, ofs_y in [[0, 0], [1, 0], [0, 1], [1, 1]]:
+            seed_x = np.floor(self.latent[0]) + ofs_x
+            seed_y = np.floor(self.latent[1]) + ofs_y
+            seed = (int(seed_x) + int(seed_y) * self.step_y) & ((1 << 32) - 1)
+            weight = (1 - abs(self.latent[0] - seed_x)) * (1 - abs(self.latent[1] - seed_y))
+            if weight > 0:
+                self.renderArgs["w0_seeds"].append([seed, weight])
 
     async def loop(self):
         if not ndi.initialize():
@@ -155,6 +173,7 @@ class lazer:
             #if True:
             if localMustRun:
                 self.lastRun = time.time()
+                self.setSeedsFromLatent()
                 res = renderer.render(**self.renderArgs)
                 self.imagesGenerated+=1
 
@@ -184,6 +203,13 @@ class lazer:
         if not len(args) == 1 or type(args[0]) is not float:
             return
         
+        if myLazer.latent[0] == args[0]:
+            return
+        
+        myLazer.latent[0] = args[0]
+        myLazer.mustRun = True
+        return
+        
         # do nothing if latens are the same
         if myLazer.renderArgs['w0_seeds'][0][1] == args[0] and myLazer.renderArgs['w0_seeds'][1][1] == args[0] :
             return
@@ -196,6 +222,13 @@ class lazer:
         # We expect one float argument
         if not len(args) == 1 or type(args[0]) is not float:
             return
+        
+        if myLazer.latent[1] == args[0]:
+            return
+        
+        myLazer.latent[1] = args[0]
+        myLazer.mustRun = True
+        return
         
         # do nothing if latens are the same
         if myLazer.renderArgs['w0_seeds'][2][1] == args[0] and myLazer.renderArgs['w0_seeds'][3][1] == args[0] :
