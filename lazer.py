@@ -35,14 +35,24 @@ import time
 import NDIlib as ndi
 
 class lazer:
-    latent = 0.1
-    randomize = False
-    fps = 15
-    mustRun = True,
+    #where we look into the model
+    latent = [random.randint(0,1611312),random.randint(0,1611312)] #x,y
 
+    #step size for latent walk
+    step_y = 100
+
+    #default fps
+    fps = 15
+    #decides if a new frame has to rendered
+    mustRun = True
+
+    #print frequency in ms
+    printFrequency = 50
+
+    #all render args for all the beauty
     renderArgs = dnnlib.EasyDict(
         pkl = 'C:\\git\\stylegan3\\models\\wikiart-1024-stylegan3-t-17.2Mimg.pkl',
-        w0_seeds=[[213, 0.23870113378660512], [214, 0.7403464852610139], [313, 0.005108390022670563], [314, 0.01584399092971049]],
+        w0_seeds=[],
         trunc_psi=1.6,
         trunc_cutoff = 16,
         random_seed = 0,
@@ -58,11 +68,18 @@ class lazer:
         ) 
     
     timeServerStart = time.perf_counter()
+    #number of ndi frames sent per second
     ndiFrequency = 0
+    #number of ndi frames sent
     ndiFramesSent = 0
+    #number of images generate
     imagesGenerated = 0
+    #number of loops where no rendering was neccessary
     skippedLoop = 0
+    # must redo model load stuff
     modelChanged = True
+    # random latent addition to add a random value to existing latents
+    randFactor = [0,0]
 
     def sendVideo (self,img,ndi_send,video_frame):
         video_frame.data = img
@@ -78,44 +95,33 @@ class lazer:
             buf = torch.empty(ref.shape, dtype=ref.dtype).pin_memory()
             self._pinned_bufs[key] = buf
         return buf
-    
-    # cursor movement
-    def move (self, y, x):
-        print("\033[%d;%dH" % (y, x))
 
     def printStatus(self):
         print("Generating at "+str(1/(time.time()-self.lastRun))+" fps")
         print("Images generated: "+str(self.imagesGenerated))
         print("NDI frames sent: "+str(self.ndiFramesSent))
         print("skipped loops: "+str(self.skippedLoop))
-        print("latentX: "+str(self.renderArgs['w0_seeds'][0][1]))
-        print("latentY: "+str(self.renderArgs['w0_seeds'][2][1]))
-        print("randomize: "+str(self.randomize),end='')
+        print("latentX: "+str(self.latent[0]))
+        print("latentY: "+str(self.latent[1]),end='')
         
-        print("\033[A\033[A\033[A\033[A\033[A\033[A\033[A")
+        print("\033[A\033[A\033[A\033[A\033[A\033[A")
 
     def randomizeSeeds(self):
-        myLazer.latent[0] = random.randint(0,1611312)
-        myLazer.latent[1] = random.randint(0,1611312)
+        myLazer.randFactor[0] = random.randint(0,1611312)
+        myLazer.randFactor[1] = random.randint(0,1611312)
         self.randomize = False
         return
 
-        myLazer.renderArgs['w0_seeds'][0][0] = random.randint(0,1611312)
-        myLazer.renderArgs['w0_seeds'][1][0] = random.randint(0,1611312)
-        myLazer.renderArgs['w0_seeds'][2][0] = random.randint(0,1611312)
-        myLazer.renderArgs['w0_seeds'][3][0] = random.randint(0,1611312)
-        
-
-    latent = [0,0] #x,y
-    step_y = 100
-
     def setSeedsFromLatent(self):
+        randomizedLatentX = self.latent[0]+self.randFactor[0]
+        randomizedLatentY = self.latent[1]+self.randFactor[1]
+
         self.renderArgs["w0_seeds"] = [] # [[seed, weight], ...]
         for ofs_x, ofs_y in [[0, 0], [1, 0], [0, 1], [1, 1]]:
-            seed_x = np.floor(self.latent[0]) + ofs_x
-            seed_y = np.floor(self.latent[1]) + ofs_y
+            seed_x = np.floor(randomizedLatentX) + ofs_x
+            seed_y = np.floor(randomizedLatentY) + ofs_y
             seed = (int(seed_x) + int(seed_y) * self.step_y) & ((1 << 32) - 1)
-            weight = (1 - abs(self.latent[0] - seed_x)) * (1 - abs(self.latent[1] - seed_y))
+            weight = (1 - abs(randomizedLatentX - seed_x)) * (1 - abs(randomizedLatentY - seed_y))
             if weight > 0:
                 self.renderArgs["w0_seeds"].append([seed, weight])
 
@@ -142,10 +148,14 @@ class lazer:
         # to know when to flush the terminal after styegan init
         firstRun = True
         self.lastRun = time.time()
+        lastPrint = self.lastRun
+
             
         while True:
+            currentTime = time.time()
+
             # ms elapsed since last run
-            elapsed = (time.time() - self.lastRun)*1000
+            elapsed = (currentTime - self.lastRun)*1000
             
             # run frequency goal in ms
             runEvery = 1000 / self.fps
@@ -157,14 +167,13 @@ class lazer:
             localMustRun = self.mustRun
             self.mustRun = False
 
-            if self.randomize:
-                self.randomizeSeeds()
-                localMustRun = True
-
             if not firstRun:
                 try:
-                    #if faster than min resolution of timer
-                    self.printStatus()
+                    # ms elapsed since last print
+                    elapsedSincePrint = (currentTime - lastPrint)*1000
+                    if elapsedSincePrint > self.printFrequency:
+                        self.printStatus()
+                        lastPrint = currentTime
                 except:
                     x= 1
                 finally:
@@ -209,14 +218,6 @@ class lazer:
         myLazer.latent[0] = args[0]
         myLazer.mustRun = True
         return
-        
-        # do nothing if latens are the same
-        if myLazer.renderArgs['w0_seeds'][0][1] == args[0] and myLazer.renderArgs['w0_seeds'][1][1] == args[0] :
-            return
-        
-        myLazer.renderArgs['w0_seeds'][0][1] = args[0]
-        myLazer.renderArgs['w0_seeds'][1][1] = args[0]
-        myLazer.mustRun = True
     
     def filter_handler_latent_y(address, *args):
         # We expect one float argument
@@ -229,14 +230,6 @@ class lazer:
         myLazer.latent[1] = args[0]
         myLazer.mustRun = True
         return
-        
-        # do nothing if latens are the same
-        if myLazer.renderArgs['w0_seeds'][2][1] == args[0] and myLazer.renderArgs['w0_seeds'][3][1] == args[0] :
-            return
-        
-        myLazer.renderArgs['w0_seeds'][2][1] = args[0]
-        myLazer.renderArgs['w0_seeds'][3][1] = args[0]
-        myLazer.mustRun = True
 
     #-1 - 2 default 1
     def filter_handler_truncpsi(address, *args):
@@ -382,13 +375,13 @@ class lazer:
         myLazer.mustRun = True
 
     def filter_handler_randomize(address, *args):
-        print('randomize activated', end='\r')
-        myLazer.randomize = True
+        myLazer.randFactor[0] = random.randint(0,1611312)
+        myLazer.randFactor[1] = random.randint(0,1611312)
+        myLazer.mustRun = True
 
     def filter_handler_targetfps(address, *args):
         if not len(args) == 1 or type(args[0]) is not int:
             return
-        print('set fps to '+str(args[0]), end='\r')
         myLazer.fps = args[0]
 
     def filter_handler_setpkl(address, *args):
