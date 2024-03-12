@@ -62,6 +62,7 @@ class lazer:
     ndiFramesSent = 0
     imagesGenerated = 0
     skippedLoop = 0
+    modelChanged = True
 
     def sendVideo (self,img,ndi_send,video_frame):
         video_frame.data = img
@@ -163,12 +164,15 @@ class lazer:
                     firstRun = False
 
                 imgInColor = cv.cvtColor(res['image'], cv.COLOR_RGB2RGBA)
-                # TODO only after pkl load
-                imgWidth, imgHeight, imgChannel = imgInColor.shape
-                video_frame.xres = imgWidth
-                video_frame.yres = imgHeight
+                if (self.modelChanged):
+                    imgWidth, imgHeight, imgChannel = imgInColor.shape
+                    video_frame.xres = imgWidth
+                    video_frame.yres = imgHeight
+                    self.modelChanged = False
+                    #get rid of stylegan model load text
+                    print(colorama.ansi.clear_screen())
+
                 self.sendVideo(imgInColor,ndi_send, video_frame)
-                
                 self.ndiFramesSent += 1
             else:
                 self.skippedLoop += 1
@@ -364,6 +368,7 @@ class lazer:
 
         print('loading pklfile '+args[0], end='\r')
         myLazer.renderArgs.pkl = args[0]
+        myLazer.modelChanged = True
 
     dispatcher = Dispatcher()
     dispatcher.map("/latentX", filter_handler_latent_x)
