@@ -53,7 +53,7 @@ class lazer:
         base_channel = 0,
         img_scale_db = 0,
         img_normalize = False,
-        #input_transform,
+        input_transform = [[1,0,0],[0,1,0],[0,0,1]],
         untransform = False
         ) 
     
@@ -214,6 +214,123 @@ class lazer:
         myLazer.renderArgs['trunc_psi'] = args[0]
         myLazer.mustRun = True
 
+    #input transform x0
+    def filter_handler_transformx0(address, *args):
+        # We expect one float argument
+        if not len(args) == 1 or type(args[0]) is not float:
+            return
+        
+        # do nothing if latens are the same
+        if myLazer.renderArgs['input_transform'][0][0] == args[0]:
+            return
+        
+        myLazer.renderArgs['input_transform'][0][0] = args[0]
+        myLazer.mustRun = True
+
+    #input transform y0
+    def filter_handler_transformy0(address, *args):
+        # We expect one float argument
+        if not len(args) == 1 or type(args[0]) is not float:
+            return
+        
+        # do nothing if latens are the same
+        if myLazer.renderArgs['input_transform'][0][1] == args[0]:
+            return
+        
+        myLazer.renderArgs['input_transform'][0][1] = args[0]
+        myLazer.mustRun = True
+
+    #input transform z0
+    def filter_handler_transformz0(address, *args):
+        # We expect one float argument
+        if not len(args) == 1 or type(args[0]) is not float:
+            return
+        
+        # do nothing if latens are the same
+        if myLazer.renderArgs['input_transform'][0][2] == args[0]:
+            return
+        
+        myLazer.renderArgs['input_transform'][0][2] = args[0]
+        myLazer.mustRun = True
+
+    #input transform x1
+    def filter_handler_transformx1(address, *args):
+        # We expect one float argument
+        if not len(args) == 1 or type(args[0]) is not float:
+            return
+        
+        # do nothing if latens are the same
+        if myLazer.renderArgs['input_transform'][1][0] == args[0]:
+            return
+        
+        myLazer.renderArgs['input_transform'][1][0] = args[0]
+        myLazer.mustRun = True
+
+    #input transform y1
+    def filter_handler_transformy1(address, *args):
+        # We expect one float argument
+        if not len(args) == 1 or type(args[0]) is not float:
+            return
+        
+        # do nothing if latens are the same
+        if myLazer.renderArgs['input_transform'][1][1] == args[0]:
+            return
+        
+        myLazer.renderArgs['input_transform'][1][1] = args[0]
+        myLazer.mustRun = True
+
+    #input transform z1
+    def filter_handler_transformz1(address, *args):
+        # We expect one float argument
+        if not len(args) == 1 or type(args[0]) is not float:
+            return
+        
+        # do nothing if latens are the same
+        if myLazer.renderArgs['input_transform'][1][2] == args[0]:
+            return
+        
+        myLazer.renderArgs['input_transform'][1][2] = args[0]
+        myLazer.mustRun = True
+
+    #input transform x2
+    def filter_handler_transformx2(address, *args):
+        # We expect one float argument
+        if not len(args) == 1 or type(args[0]) is not float:
+            return
+        
+        # do nothing if latens are the same
+        if myLazer.renderArgs['input_transform'][2][0] == args[0]:
+            return
+        
+        myLazer.renderArgs['input_transform'][2][0] = args[0]
+        myLazer.mustRun = True
+
+    #input transform y2
+    def filter_handler_transformy2(address, *args):
+        # We expect one float argument
+        if not len(args) == 1 or type(args[0]) is not float:
+            return
+        
+        # do nothing if latens are the same
+        if myLazer.renderArgs['input_transform'][2][1] == args[0]:
+            return
+        
+        myLazer.renderArgs['input_transform'][2][1] = args[0]
+        myLazer.mustRun = True
+
+    #input transform z2
+    def filter_handler_transformz2(address, *args):
+        # We expect one float argument
+        if not len(args) == 1 or type(args[0]) is not float:
+            return
+        
+        # do nothing if latens are the same
+        if myLazer.renderArgs['input_transform'][2][2] == args[0]:
+            return
+        
+        myLazer.renderArgs['input_transform'][2][2] = args[0]
+        myLazer.mustRun = True
+
     # 0- 16 default 16
     def filter_handler_trunccutoff(address, *args):
         # We expect one int argument
@@ -253,9 +370,20 @@ class lazer:
     dispatcher.map("/latentY", filter_handler_latent_y)
     dispatcher.map("/truncpsi", filter_handler_truncpsi)
     dispatcher.map("/trunccutoff", filter_handler_trunccutoff)
+    dispatcher.map("/inputtransformx0", filter_handler_transformx0)
+    dispatcher.map("/inputtransformy0", filter_handler_transformy0)
+    dispatcher.map("/inputtransformz0", filter_handler_transformz0)
+    dispatcher.map("/inputtransformx1", filter_handler_transformx1)
+    dispatcher.map("/inputtransformy1", filter_handler_transformy1)
+    dispatcher.map("/inputtransformz1", filter_handler_transformz1)
+    dispatcher.map("/inputtransformx2", filter_handler_transformx2)
+    dispatcher.map("/inputtransformy2", filter_handler_transformy2)
+    dispatcher.map("/inputtransformz2", filter_handler_transformz2)
     dispatcher.map("/randomize", filter_handler_randomize)
     dispatcher.map("/targetfps", filter_handler_targetfps)
     dispatcher.map("/setpkl", filter_handler_setpkl)
+
+    
 
     ip = "127.0.0.1"
     port = 161
