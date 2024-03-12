@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import sys
 sys.path.append("../stylegan3")
+sys.path.append("../lazer")
 import os
 import re
 from typing import List, Optional, Tuple, Union
@@ -31,12 +32,18 @@ from string import printable
 from stylegan3.viz.renderer import Renderer
 from stylegan3 import dnnlib
 import time
-
 import NDIlib as ndi
 
-class lazer:
+#lazer class portions
+from lazer._filterhandlers import filterhandler
+
+class lazer(filterhandler):
+    #osc config
     osc_ip = "127.0.0.1"
     osc_port = 161
+    
+    #ndi config
+    ndi_name = 'stylegan3-lazer'
 
     #where we look into the model
     latent = [random.randint(0,1611312),random.randint(0,1611312)] #x,y
@@ -127,14 +134,14 @@ class lazer:
             weight = (1 - abs(randomizedLatentX - seed_x)) * (1 - abs(randomizedLatentY - seed_y))
             if weight > 0:
                 self.renderArgs["w0_seeds"].append([seed, weight])
-
-    async def loop(self):
+    
+    def initNdi(self):
         if not ndi.initialize():
             print("Could not initialize NDI.")
-            return 0
-
+            exit()
+        
         send_settings = ndi.SendCreate()        
-        send_settings.ndi_name = 'stylegan3-lazer'
+        send_settings.ndi_name = self.ndi_name
         send_settings.clock_video = False
         send_settings.clock_audio = False
 
@@ -146,6 +153,11 @@ class lazer:
         
         video_frame = ndi.VideoFrameV2()
 
+        return ndi_send, video_frame
+
+    async def loop(self):
+        ndi_send, video_frame = self.initNdi()
+
         renderer = Renderer()
         
         # to know when to flush the terminal after styegan init
@@ -153,7 +165,6 @@ class lazer:
         self.lastRun = time.time()
         lastPrint = self.lastRun
 
-            
         while True:
             currentTime = time.time()
 
@@ -209,197 +220,8 @@ class lazer:
                 self.skippedLoop += 1
 
             await asyncio.sleep(.001)
-
-    def filter_handler_latent_x(self, address, *args):
-        # We expect one float argument
-        if not len(args) == 1 or type(args[0]) is not float:
-            return
-        
-        if self.latent[0] == args[0]:
-            return
-        
-        self.latent[0] = args[0]
-        self.mustRun = True
-        return
     
-    def filter_handler_latent_y(self, address, *args):
-        # We expect one float argument
-        if not len(args) == 1 or type(args[0]) is not float:
-            return
-        
-        if self.latent[1] == args[0]:
-            return
-        
-        self.latent[1] = args[0]
-        self.mustRun = True
-        return
-
-    #-1 - 2 default 1
-    def filter_handler_truncpsi(self, address, *args):
-        # We expect one float argument
-        if not len(args) == 1 or type(args[0]) is not float:
-            return
-        
-        # do nothing if latens are the same
-        if self.renderArgs['trunc_psi'] == args[0]:
-            return
-        
-        self.renderArgs['trunc_psi'] = args[0]
-        self.mustRun = True
-
-    #input transform x0
-    def filter_handler_transformx0(self, address, *args):
-        # We expect one float argument
-        if not len(args) == 1 or type(args[0]) is not float:
-            return
-        
-        # do nothing if latens are the same
-        if self.renderArgs['input_transform'][0][0] == args[0]:
-            return
-        
-        self.renderArgs['input_transform'][0][0] = args[0]
-        self.mustRun = True
-
-    #input transform y0
-    def filter_handler_transformy0(self, address, *args):
-        # We expect one float argument
-        if not len(args) == 1 or type(args[0]) is not float:
-            return
-        
-        # do nothing if latens are the same
-        if self.renderArgs['input_transform'][0][1] == args[0]:
-            return
-        
-        self.renderArgs['input_transform'][0][1] = args[0]
-        self.mustRun = True
-
-    #input transform z0
-    def filter_handler_transformz0(self, address, *args):
-        # We expect one float argument
-        if not len(args) == 1 or type(args[0]) is not float:
-            return
-        
-        # do nothing if latens are the same
-        if self.renderArgs['input_transform'][0][2] == args[0]:
-            return
-        
-        self.renderArgs['input_transform'][0][2] = args[0]
-        self.mustRun = True
-
-    #input transform x1
-    def filter_handler_transformx1(self, address, *args):
-        # We expect one float argument
-        if not len(args) == 1 or type(args[0]) is not float:
-            return
-        
-        # do nothing if latens are the same
-        if self.renderArgs['input_transform'][1][0] == args[0]:
-            return
-        
-        self.renderArgs['input_transform'][1][0] = args[0]
-        self.mustRun = True
-
-    #input transform y1
-    def filter_handler_transformy1(self, address, *args):
-        # We expect one float argument
-        if not len(args) == 1 or type(args[0]) is not float:
-            return
-        
-        # do nothing if latens are the same
-        if self.renderArgs['input_transform'][1][1] == args[0]:
-            return
-        
-        self.renderArgs['input_transform'][1][1] = args[0]
-        self.mustRun = True
-
-    #input transform z1
-    def filter_handler_transformz1(self, address, *args):
-        # We expect one float argument
-        if not len(args) == 1 or type(args[0]) is not float:
-            return
-        
-        # do nothing if latens are the same
-        if self.renderArgs['input_transform'][1][2] == args[0]:
-            return
-        
-        self.renderArgs['input_transform'][1][2] = args[0]
-        self.mustRun = True
-
-    #input transform x2
-    def filter_handler_transformx2(self, address, *args):
-        # We expect one float argument
-        if not len(args) == 1 or type(args[0]) is not float:
-            return
-        
-        # do nothing if latens are the same
-        if self.renderArgs['input_transform'][2][0] == args[0]:
-            return
-        
-        self.renderArgs['input_transform'][2][0] = args[0]
-        self.mustRun = True
-
-    #input transform y2
-    def filter_handler_transformy2(self, address, *args):
-        # We expect one float argument
-        if not len(args) == 1 or type(args[0]) is not float:
-            return
-        
-        # do nothing if latens are the same
-        if self.renderArgs['input_transform'][2][1] == args[0]:
-            return
-        
-        self.renderArgs['input_transform'][2][1] = args[0]
-        self.mustRun = True
-
-    #input transform z2
-    def filter_handler_transformz2(self, address, *args):
-        # We expect one float argument
-        if not len(args) == 1 or type(args[0]) is not float:
-            return
-        
-        # do nothing if latens are the same
-        if self.renderArgs['input_transform'][2][2] == args[0]:
-            return
-        
-        self.renderArgs['input_transform'][2][2] = args[0]
-        self.mustRun = True
-
-    # 0- 16 default 16
-    def filter_handler_trunccutoff(self, address, *args):
-        # We expect one int argument
-        if not len(args) == 1 or type(args[0]) is not int:
-            return
-        
-        # do nothing if latens are the same
-        if self.renderArgs['trunc_cutoff'] == args[0]:
-            return
-        
-        self.renderArgs['trunc_cutoff'] = args[0]
-        self.mustRun = True
-
-    def filter_handler_randomize(self, address, *args):
-        self.randFactor[0] = random.randint(0,1611312)
-        self.randFactor[1] = random.randint(0,1611312)
-        self.mustRun = True
-
-    def filter_handler_targetfps(self, address, *args):
-        if not len(args) == 1 or type(args[0]) is not int:
-            return
-        self.fps = args[0]
-
-    def filter_handler_setpkl(self, address, *args):
-        if not len(args) == 1 or type(args[0]) is not str:
-            return
-        
-        if (not os.path.isfile(args[0])):
-            print ("Could not load pkl file "+args[0]+" - file does not exist")
-            return
-
-        print('loading pklfile '+args[0], end='\r')
-        self.renderArgs.pkl = args[0]
-        self.modelChanged = True
-
-    async def init_main(self, timer):
+    def setupDispatcher(self):
         dispatcher = Dispatcher()
         dispatcher.map("/latentX", self.filter_handler_latent_x)
         dispatcher.map("/latentY", self.filter_handler_latent_y)
@@ -417,7 +239,11 @@ class lazer:
         dispatcher.map("/randomize", self.filter_handler_randomize)
         dispatcher.map("/targetfps", self.filter_handler_targetfps)
         dispatcher.map("/setpkl", self.filter_handler_setpkl)
+        return dispatcher
 
+    async def init_main(self, timer):
+        dispatcher = self.setupDispatcher()
+        
         server = AsyncIOOSCUDPServer((self.osc_ip, self.osc_port), dispatcher, asyncio.get_event_loop())
         transport, protocol = await server.create_serve_endpoint()  # Create datagram endpoint and start serving
 
