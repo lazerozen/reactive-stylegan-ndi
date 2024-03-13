@@ -92,6 +92,19 @@ class filterhandler:
 		self.renderArgs['trunc_cutoff'] = args[0]
 		self.mustRun = True
 
+	# -40 - 40 default 0
+	def filter_handler_img_scale_db(self, address, *args):
+		# We expect one int argument
+		if not len(args) == 1 or type(args[0]) is not float:
+			return
+		
+		# do nothing if latens are the same
+		if self.renderArgs['img_scale_db'] == args[0]:
+			return
+		
+		self.renderArgs['img_scale_db'] = args[0]
+		self.mustRun = True
+
 	def filter_handler_randomize(self, address, *args):
 		self.randFactor[0] = random.randint(0,1611312)
 		self.randFactor[1] = random.randint(0,1611312)

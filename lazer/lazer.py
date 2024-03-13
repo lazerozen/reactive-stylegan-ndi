@@ -68,20 +68,20 @@ class lazer(filterhandler):
 
     #all render args for all the beauty
     renderArgs = dnnlib.EasyDict(
-        pkl = 'C:\\git\\stylegan3\\models\\wikiart-1024-stylegan3-t-17.2Mimg.pkl',
-        w0_seeds=[],
-        trunc_psi=1.6,
-        trunc_cutoff = 16,
-        random_seed = 0,
-        noise_mode = 'const',
-        force_fp32 = False,
-        layer_name = None,
-        sel_channels = 3,
-        base_channel = 0,
-        img_scale_db = 0,
-        img_normalize = False,
+        pkl             = 'C:\\git\\stylegan3\\models\\wikiart-1024-stylegan3-t-17.2Mimg.pkl',
+        w0_seeds        = [],
+        trunc_psi       = 1.6,
+        trunc_cutoff    = 16,
+        random_seed     = 0,
+        noise_mode      = 'const',
+        force_fp32      = False,
+        layer_name      = None,
+        sel_channels    = 3,
+        base_channel    = 0,
+        img_normalize   = False,
         input_transform = [[1,0,0],[0,1,0],[0,0,1]],
-        untransform = False
+        untransform     = False,
+        img_scale_db    = 0
         ) 
     
     timeServerStart = time.perf_counter()
@@ -249,6 +249,7 @@ class lazer(filterhandler):
         dispatcher.map("/inputtransformx", self.filter_handler_transformx)
         dispatcher.map("/inputtransformy", self.filter_handler_transformy)
         dispatcher.map("/inputtransformrotation", self.filter_handler_rotation)
+        dispatcher.map("/imagescaledb", self.filter_handler_img_scale_db)
         dispatcher.map("/randomize", self.filter_handler_randomize)
         dispatcher.map("/targetfps", self.filter_handler_targetfps)
         dispatcher.map("/setpkl", self.filter_handler_setpkl)
