@@ -31,6 +31,7 @@ from random import randint, choice
 from string import printable
 from stylegan3.viz.renderer import Renderer
 from stylegan3 import dnnlib
+from stylegan3 import gen_images
 import time
 import NDIlib as ndi
 
@@ -47,6 +48,12 @@ class lazer(filterhandler):
 
     #where we look into the model
     latent = [random.randint(0,1611312),random.randint(0,1611312)] #x,y
+
+    #decides if a new frame has to rendered
+    mustTransform = True
+    translate_x = 0
+    translate_y = 0
+    rotation = 0
 
     #step size for latent walk
     step_y = 100
@@ -192,11 +199,18 @@ class lazer(filterhandler):
                     x= 1
                 finally:
                     x = 1
+            if self.mustTransform:
+                localMustRun = True
+                transform = gen_images.make_transform([self.translate_x,self.translate_y],self.rotation)
+                self.renderArgs["input_transform"] = transform
+                self.mustTransform = False
 
             #if True:
             if localMustRun:
                 self.lastRun = time.time()
+
                 self.setSeedsFromLatent()
+
                 res = renderer.render(**self.renderArgs)
                 self.imagesGenerated+=1
 
@@ -232,15 +246,9 @@ class lazer(filterhandler):
         dispatcher.map("/latentY", self.filter_handler_latent_y)
         dispatcher.map("/truncpsi", self.filter_handler_truncpsi)
         dispatcher.map("/trunccutoff", self.filter_handler_trunccutoff)
-        dispatcher.map("/inputtransformx0", self.filter_handler_transformx0)
-        dispatcher.map("/inputtransformy0", self.filter_handler_transformy0)
-        dispatcher.map("/inputtransformz0", self.filter_handler_transformz0)
-        dispatcher.map("/inputtransformx1", self.filter_handler_transformx1)
-        dispatcher.map("/inputtransformy1", self.filter_handler_transformy1)
-        dispatcher.map("/inputtransformz1", self.filter_handler_transformz1)
-        dispatcher.map("/inputtransformx2", self.filter_handler_transformx2)
-        dispatcher.map("/inputtransformy2", self.filter_handler_transformy2)
-        dispatcher.map("/inputtransformz2", self.filter_handler_transformz2)
+        dispatcher.map("/inputtransformx", self.filter_handler_transformx)
+        dispatcher.map("/inputtransformy", self.filter_handler_transformy)
+        dispatcher.map("/inputtransformrotation", self.filter_handler_rotation)
         dispatcher.map("/randomize", self.filter_handler_randomize)
         dispatcher.map("/targetfps", self.filter_handler_targetfps)
         dispatcher.map("/setpkl", self.filter_handler_setpkl)

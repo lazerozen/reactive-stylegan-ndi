@@ -1,4 +1,6 @@
 import random
+import os
+
 class filterhandler:
 	def filter_handler_latent_x(self, address, *args):
 		# We expect one float argument
@@ -37,122 +39,45 @@ class filterhandler:
 		self.renderArgs['trunc_psi'] = args[0]
 		self.mustRun = True
 
-	#input transform x0
-	def filter_handler_transformx0(self, address, *args):
-		# We expect one float argument
-		if not len(args) == 1 or type(args[0]) is not float:
-			return
-		
-		# do nothing if latens are the same
-		if self.renderArgs['input_transform'][0][0] == args[0]:
-			return
-		
-		self.renderArgs['input_transform'][0][0] = args[0]
-		self.mustRun = True
 
-	#input transform y0
-	def filter_handler_transformy0(self, address, *args):
+	#input transform x
+	def filter_handler_transformx(self, address, *args):
 		# We expect one float argument
 		if not len(args) == 1 or type(args[0]) is not float:
 			return
 		
 		# do nothing if latens are the same
-		if self.renderArgs['input_transform'][0][1] == args[0]:
+		if self.translate_x == args[0]:
 			return
 		
-		self.renderArgs['input_transform'][0][1] = args[0]
-		self.mustRun = True
+		self.translate_x = args[0]
+		self.mustTransform = True
 
-	#input transform z0
-	def filter_handler_transformz0(self, address, *args):
+	#input transform y
+	def filter_handler_transformy(self, address, *args):
 		# We expect one float argument
 		if not len(args) == 1 or type(args[0]) is not float:
 			return
 		
 		# do nothing if latens are the same
-		if self.renderArgs['input_transform'][0][2] == args[0]:
+		if self.translate_y == args[0]:
 			return
 		
-		self.renderArgs['input_transform'][0][2] = args[0]
-		self.mustRun = True
-
-	#input transform x1
-	def filter_handler_transformx1(self, address, *args):
+		self.translate_y = args[0]
+		self.mustTransform = True
+		
+	#input transform rotation
+	def filter_handler_rotation(self, address, *args):
 		# We expect one float argument
 		if not len(args) == 1 or type(args[0]) is not float:
 			return
 		
 		# do nothing if latens are the same
-		if self.renderArgs['input_transform'][1][0] == args[0]:
+		if self.rotation == args[0]:
 			return
 		
-		self.renderArgs['input_transform'][1][0] = args[0]
-		self.mustRun = True
-
-	#input transform y1
-	def filter_handler_transformy1(self, address, *args):
-		# We expect one float argument
-		if not len(args) == 1 or type(args[0]) is not float:
-			return
-		
-		# do nothing if latens are the same
-		if self.renderArgs['input_transform'][1][1] == args[0]:
-			return
-		
-		self.renderArgs['input_transform'][1][1] = args[0]
-		self.mustRun = True
-
-	#input transform z1
-	def filter_handler_transformz1(self, address, *args):
-		# We expect one float argument
-		if not len(args) == 1 or type(args[0]) is not float:
-			return
-		
-		# do nothing if latens are the same
-		if self.renderArgs['input_transform'][1][2] == args[0]:
-			return
-		
-		self.renderArgs['input_transform'][1][2] = args[0]
-		self.mustRun = True
-
-	#input transform x2
-	def filter_handler_transformx2(self, address, *args):
-		# We expect one float argument
-		if not len(args) == 1 or type(args[0]) is not float:
-			return
-		
-		# do nothing if latens are the same
-		if self.renderArgs['input_transform'][2][0] == args[0]:
-			return
-		
-		self.renderArgs['input_transform'][2][0] = args[0]
-		self.mustRun = True
-
-	#input transform y2
-	def filter_handler_transformy2(self, address, *args):
-		# We expect one float argument
-		if not len(args) == 1 or type(args[0]) is not float:
-			return
-		
-		# do nothing if latens are the same
-		if self.renderArgs['input_transform'][2][1] == args[0]:
-			return
-		
-		self.renderArgs['input_transform'][2][1] = args[0]
-		self.mustRun = True
-
-	#input transform z2
-	def filter_handler_transformz2(self, address, *args):
-		# We expect one float argument
-		if not len(args) == 1 or type(args[0]) is not float:
-			return
-		
-		# do nothing if latens are the same
-		if self.renderArgs['input_transform'][2][2] == args[0]:
-			return
-		
-		self.renderArgs['input_transform'][2][2] = args[0]
-		self.mustRun = True
+		self.rotation = args[0]
+		self.mustTransform = True
 
 	# 0- 16 default 16
 	def filter_handler_trunccutoff(self, address, *args):
