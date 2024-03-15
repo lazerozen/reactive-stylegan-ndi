@@ -75,7 +75,7 @@ class lazer(filterhandler):
         self.mustRun = True
         self.printFrequency = 50
         self.renderArgs = dnnlib.EasyDict(
-            pkl             = 'C:\\git\\stylegan3\\models\\wikiart-1024-stylegan3-t-17.2Mimg.pkl',
+            pkl             = '',
             w0_seeds        = [],
             trunc_psi       = 1.6,
             trunc_cutoff    = 16,
@@ -97,6 +97,7 @@ class lazer(filterhandler):
         self.skippedLoop = 0
         self.modelChanged = True
         self.randFactor = [0,0]
+        #self._pinned_bufs   = dict()    # {(shape, dtype): torch.Tensor, ...}
 
     def sendVideo(self, img, ndi_send, video_frame):
         """
@@ -241,7 +242,7 @@ class lazer(filterhandler):
                 self.renderArgs["input_transform"] = transform
                 self.mustTransform = False
 
-            if localMustRun:
+            if localMustRun and self.renderArgs["pkl"] != '':
                 self.lastRun = time.time()
 
                 self.setSeedsFromLatent()
@@ -255,6 +256,8 @@ class lazer(filterhandler):
                     firstRun = False
 
                 imgInColor = cv.cvtColor(res['image'], cv.COLOR_RGB2RGBA)
+                # TODO pinned buffer some time
+                #imgInColor = self._get_pinned_buf(cv.cvtColor(res['image'], cv.COLOR_RGB2RGBA))
                 
                 #convert to 8bit if neccessary
                 #ratio = np.amax(imgInColor) / 256 
