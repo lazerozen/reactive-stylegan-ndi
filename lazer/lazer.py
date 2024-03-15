@@ -55,6 +55,7 @@ class lazer(filterhandler):
         skippedLoop (int): The number of loops where no rendering was necessary.
         modelChanged (bool): Flag indicating if the StyleGAN model has changed and needs to be reloaded.
         randFactor (list): The random latent addition to add a random value to existing latents.
+        imagesGeneratedFlag (int): The total number of images generated at the last print.
     """
 class lazer(filterhandler):
 
@@ -98,7 +99,8 @@ class lazer(filterhandler):
         self.modelChanged = True
         self.randFactor = [0,0]
         #self._pinned_bufs   = dict()    # {(shape, dtype): torch.Tensor, ...}
-
+        self.imagesGeneratedFlag = 0
+    
     def sendVideo(self, img, ndi_send, video_frame):
         """
         Sends the video frame via NDI.
@@ -132,18 +134,22 @@ class lazer(filterhandler):
             buf = torch.empty(ref.shape, dtype=ref.dtype).pin_memory()
             self._pinned_bufs[key] = buf
         return buf
-
+    
     def printStatus(self):
         """
         Prints the current status.
         """
-        print("Generating at "+str(1/(time.time()-self.lastRun))+" fps")
+        if self.imagesGenerated == self.imagesGeneratedFlag:
+            print("Generating at 0 fps                     ")
+        else: 
+            print("Generating at "+str(1/(time.time()-self.lastRun))+" fps")
         print("Images generated: "+str(self.imagesGenerated))
         print("NDI frames sent: "+str(self.ndiFramesSent))
         print("Skipped loops: "+str(self.skippedLoop))
         print("LatentX: "+str(self.latent[0]))
         print("LatentY: "+str(self.latent[1]), end='')
         print("\033[A\033[A\033[A\033[A\033[A\033[A")
+        self.imagesGeneratedFlag = self.imagesGenerated
 
     def randomizeSeeds(self):
         """
