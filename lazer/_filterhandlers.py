@@ -126,3 +126,4 @@ class filterhandler:
 		print('loading pklfile '+args[0], end='\r')
 		self.renderArgs.pkl = args[0]
 		self.modelChanged = True
+		self.mustRun = True
