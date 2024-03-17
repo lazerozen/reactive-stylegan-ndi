@@ -1,5 +1,6 @@
 import random
 import os
+from pythonosc.udp_client import SimpleUDPClient
 
 class filterhandler:
 	def filter_handler_latent_x(self, address, *args):
@@ -126,4 +127,32 @@ class filterhandler:
 		print('loading pklfile '+args[0], end='\r')
 		self.renderArgs.pkl = args[0]
 		self.modelChanged = True
+		self.mustRun = True
+	
+	# sends current latents including random factor via OSC to port 162
+	def filter_handler_get_favorite_data (self, address, *args):
+		ip = "127.0.0.1"
+		port = 162
+
+		client = SimpleUDPClient(ip, port)  # Create client
+
+		paramsDict = {"latentX":self.latent[0]+self.randFactor[0]+ self.latentOffset[0], "latentY":self.latent[1]+self.randFactor[1]+ self.latentOffset[1]}
+		paramsString = str(paramsDict)
+		#client.send_message("/favorite_data", str(jsonPackage))   # Send float message
+		client.send_message("/favorite_data", paramsString)
+
+	def filter_handler_set_latent_offset (self, address, *args):
+		if not len(args) == 2:
+			return
+		
+		try:
+			favoriteX = float(args[0])
+			favoriteY = float(args[1])
+		except ValueError:
+			return
+
+		
+		#TODO: fail gracefully before cast
+		self.latentOffset[0] = favoriteX - self.latent[0] - self.randFactor[0]
+		self.latentOffset[1] = favoriteY - self.latent[1] - self.randFactor[1]
 		self.mustRun = True

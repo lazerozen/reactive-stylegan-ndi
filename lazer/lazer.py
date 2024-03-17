@@ -67,6 +67,7 @@ class lazer(filterhandler):
         self.osc_port = 161
         self.ndi_name = 'stylegan3-lazer'
         self.latent = [random.randint(0,1611312),random.randint(0,1611312)]
+        self.latentOffset = [0,0]
         self.mustTransform = True
         self.translate_x = 0
         self.translate_y = 0
@@ -164,8 +165,8 @@ class lazer(filterhandler):
         """
         Sets the seeds for latent vector based on the current latent coordinates.
         """
-        randomizedLatentX = self.latent[0] + self.randFactor[0]
-        randomizedLatentY = self.latent[1] + self.randFactor[1]
+        randomizedLatentX = self.latent[0] + self.randFactor[0] + self.latentOffset[0]
+        randomizedLatentY = self.latent[1] + self.randFactor[1] + self.latentOffset[1]
 
         self.renderArgs["w0_seeds"] = [] # [[seed, weight], ...]
         for ofs_x, ofs_y in [[0, 0], [1, 0], [0, 1], [1, 1]]:
@@ -303,6 +304,8 @@ class lazer(filterhandler):
         dispatcher.map("/randomize", self.filter_handler_randomize)
         dispatcher.map("/targetfps", self.filter_handler_targetfps)
         dispatcher.map("/setpkl", self.filter_handler_setpkl)
+        dispatcher.map("/get_favorite_data", self.filter_handler_get_favorite_data)
+        dispatcher.map("/set_latent_offset", self.filter_handler_set_latent_offset)
         return dispatcher
 
     async def init_main(self, timer):
