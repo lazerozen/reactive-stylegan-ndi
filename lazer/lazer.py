@@ -216,6 +216,8 @@ class lazer(filterhandler):
         self.lastRun = time.time()
         lastPrint = self.lastRun
 
+        sleepPerLoop = 0.002
+
         while True:
             currentTime = time.time()
 
@@ -225,7 +227,7 @@ class lazer(filterhandler):
             # run frequency goal in ms
             runEvery = 1000 / self.fps
             if (elapsed < runEvery):
-                await asyncio.sleep(.001)
+                await asyncio.sleep(sleepPerLoop)
                 continue
 
             # copy early for pseudo thread safety, consider lock
@@ -265,10 +267,6 @@ class lazer(filterhandler):
                 imgInColor = cv.cvtColor(res['image'], cv.COLOR_RGB2RGBA)
                 # TODO pinned buffer some time
                 #imgInColor = self._get_pinned_buf(cv.cvtColor(res['image'], cv.COLOR_RGB2RGBA))
-                
-                #convert to 8bit if neccessary
-                #ratio = np.amax(imgInColor) / 256 
-                #imgInColor = (imgInColor / ratio).astype('uint8')
 
                 if (self.modelChanged):
                     imgWidth, imgHeight, imgChannel = imgInColor.shape
@@ -283,7 +281,7 @@ class lazer(filterhandler):
             else:
                 self.skippedLoop += 1
 
-            await asyncio.sleep(.001)
+            await asyncio.sleep(sleepPerLoop)
     
     def setupDispatcher(self):
         """
@@ -326,4 +324,3 @@ class lazer(filterhandler):
         await self.loop()  # Enter main loop of program
 
         transport.close()  # Clean up serve endpoint
-
