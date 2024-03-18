@@ -124,6 +124,10 @@ class filterhandler:
 			print ("Could not load pkl file "+args[0]+" - file does not exist")
 			return
 
+		# don't reload the same pkl file
+		if self.renderArgs.pkl == args[0]:
+			return
+
 		print('loading pklfile '+args[0], end='\r')
 		self.renderArgs.pkl = args[0]
 		self.modelChanged = True

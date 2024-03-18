@@ -28,6 +28,7 @@ import NDIlib as ndi
 
 #lazer class portions
 from lazer._filterhandlers import filterhandler
+from pythonosc.udp_client import SimpleUDPClient
 
 class lazer(filterhandler):
     """
@@ -203,6 +204,17 @@ class lazer(filterhandler):
 
         return ndi_send, video_frame
 
+    def sendModelLoading(self, isLoading):
+        ip = "127.0.0.1"
+        port = 163
+
+        client = SimpleUDPClient(ip, port)  # Create client
+
+        if isLoading:
+            client.send_message("/model_loading", 1)
+        else:
+            client.send_message("/model_loading", -1)    
+
     async def loop(self):
         """
         The main loop that renders and sends frames.
@@ -256,6 +268,9 @@ class lazer(filterhandler):
 
                 self.setSeedsFromLatent()
 
+                if self.modelChanged:
+                    self.sendModelLoading(True)
+
                 res = renderer.render(**self.renderArgs)
                 self.imagesGenerated += 1
 
@@ -263,7 +278,7 @@ class lazer(filterhandler):
                     #clear stylegan module output
                     print(colorama.ansi.clear_screen())
                     firstRun = False
-
+                
                 imgInColor = cv.cvtColor(res['image'], cv.COLOR_RGB2RGBA)
                 # TODO pinned buffer some time
                 #imgInColor = self._get_pinned_buf(cv.cvtColor(res['image'], cv.COLOR_RGB2RGBA))
@@ -272,6 +287,7 @@ class lazer(filterhandler):
                     imgWidth, imgHeight, imgChannel = imgInColor.shape
                     video_frame.xres = imgWidth
                     video_frame.yres = imgHeight
+                    self.sendModelLoading(False)
                     self.modelChanged = False
                     #get rid of stylegan model load text
                     print(colorama.ansi.clear_screen())
