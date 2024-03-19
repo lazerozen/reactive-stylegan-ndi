@@ -78,6 +78,6 @@ python lazer_run.py
 
 # In Touchdesigner
 
-Open up [TD\gan-minclient.toe](TD\gan-minclient.toe) - it should start generating as soon as you have chosen your model folder in the model folder parameter of the big component. This component is also available as a .tox [TD\reactive-stylegan-ndi-v0.1.tox](TD\reactive-stylegan-ndi-v0.1.tox)
+Open up [TD/gan-minclient.toe](TD/gan-minclient.toe) - it should start generating as soon as you have chosen your model folder in the model folder parameter of the big component. This component is also available as a .tox [TD/reactive-stylegan-ndi-v0.1.tox](TD/reactive-stylegan-ndi-v0.1.tox)
 
 It's set up to react to joystick, but you can switch to some basic audio reactivity with the big joystick/music button on the left. Enjoy!
