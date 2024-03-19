@@ -6,24 +6,36 @@ class filterhandler:
 	def filter_handler_latent_x(self, address, *args):
 		# We expect one float argument
 		if not len(args) == 1 or type(args[0]) is not float:
+			try:
+				# but OSC out Dat only sends strings :(
+				value = float(args[0])
+			except ValueError:
+				return
+		else:
+			value = args[0]
+
+		if self.latent[0] == value:
 			return
 		
-		if self.latent[0] == args[0]:
-			return
-		
-		self.latent[0] = args[0]
+		self.latent[0] = value
 		self.mustRun = True
 		return
 
 	def filter_handler_latent_y(self, address, *args):
 		# We expect one float argument
 		if not len(args) == 1 or type(args[0]) is not float:
+			try:
+				# but OSC out Dat only sends strings :(
+				value = float(args[0])
+			except ValueError:
+				return
+		else:
+			value = args[0]
+		
+		if self.latent[1] == value:
 			return
 		
-		if self.latent[1] == args[0]:
-			return
-		
-		self.latent[1] = args[0]
+		self.latent[1] = value
 		self.mustRun = True
 		return
 

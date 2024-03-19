@@ -67,7 +67,7 @@ class lazer(filterhandler):
         self.osc_ip = "127.0.0.1"
         self.osc_port = 161
         self.ndi_name = 'stylegan3-lazer'
-        self.latent = [random.randint(0,1611312),random.randint(0,1611312)]
+        self.latent = [0,0]
         self.latentOffset = [0,0]
         self.mustTransform = True
         self.translate_x = 0
@@ -99,7 +99,7 @@ class lazer(filterhandler):
         self.imagesGenerated = 0
         self.skippedLoop = 0
         self.modelChanged = True
-        self.randFactor = [0,0]
+        self.randFactor = [random.randint(0,1611312),random.randint(0,1611312)]
         #self._pinned_bufs   = dict()    # {(shape, dtype): torch.Tensor, ...}
         self.imagesGeneratedFlag = 0
     
@@ -150,6 +150,11 @@ class lazer(filterhandler):
         print("Skipped loops: "+str(self.skippedLoop))
         print("LatentX: "+str(self.latent[0]))
         print("LatentY: "+str(self.latent[1]), end='')
+        #print("w0seeds: ", end='')
+        #for i in self.renderArgs["w0_seeds"]:
+        #    for j in i:
+        #        print("{:10.4f}".format(j),end=' ')
+
         print("\033[A\033[A\033[A\033[A\033[A\033[A")
         self.imagesGeneratedFlag = self.imagesGenerated
 
